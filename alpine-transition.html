@@ -83,20 +83,22 @@
           })
         },
         transitionRun() {
-          this.isTransitioning = true
           this.log('transitionrun', 'event')
+          this.isTransitioning = true
         },
         transitionStart() {
-          this.isTransitioning = true
           this.log('transitionstart', 'event')
+          this.isTransitioning = true
         },
         transitionEnd() {
-          this.isTransitioning = false
           this.log('transitionend', 'event')
+          if (this.$event.elapsedTime === 0) return
+          this.isTransitioning = false
         },
         transitionCancel() {
-          this.isTransitioning = false
           this.log('transitioncancel', 'event')
+          if (this.$event.elapsedTime === 0) return
+          this.isTransitioning = false
         },
         bindTransition() {
           Alpine.bind($refs.transitionElement, {
