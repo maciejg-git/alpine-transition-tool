@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <link href="./style.css" rel="stylesheet" />
+    <script src="./animation-loop.js"></script>
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.store("darkMode", false);
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/litewind-alpine@0.x.x/components/input/dist/cdn.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <style type="text/tailwindcss">
+      @custom-variant dark (&:where(.dark, .dark *));
+    </style>
+  </head>
+  <body>
+    <div
+      x-data="{ 
+        isVisible: true,
+        isTransitioning: false,
+        frame: 0,
+        privateClasses: '',
+        lastHidden: false,
+        autoClear: false,
+        logs: [],
+        init() {
+          this.$store.darkMode = false
+          this.bindTransition()
+          this.privateClasses = this.$refs.transitionElement.className
+          let loop = window.startAnimationLoop.bind(this)
+          loop()
+        },
+        transition: {
+          enterStart: 'opacity-0',
+          enter: 'transition ease-in-out duration-300',
+          enterEnd: 'opacity-100',
+          leaveStart: 'opacity-100',
+          leave: 'transition ease-in-out duration-300',
+          leaveEnd: 'opacity-0',
+        },
+        close() {
+          if (!this.isVisible) return
+          if (this.autoClear && !this.isTransitioning) this.logs = []
+          this.isVisible = false
+          this.isTransitioning = true
+          this.frame = 0
+          this.log('isVisible = false')
+        },
+        open() {
+          if (this.isVisible) return
+          if (this.autoClear && !this.isTransitioning) this.logs = []
+          this.isVisible = true
+          this.isTransitioning = true
+          this.frame = 0
+          this.log('isVisible = true')
+        },
+        toggle() {
+          if (this.isVisible) this.close()
+          else this.open()
+        },
+        log(message, type) {
+          let repeat = message === this.logs[this.logs.length - 1]?.message
+          let repeatCount = repeat ? this.logs[this.logs.length - 1].repeatCount + 1 : 0
+          let propertyName = this.$event?.propertyName
+          this.logs.push({
+            frame: this.frame,
+            message,
+            type,
+            repeat,
+            repeatCount,
+            propertyName,
+          })
+        },
+        transitionRun() {
+          this.isTransitioning = true
+          this.log('transitionrun', 'event')
+        },
+        transitionStart() {
+          this.isTransitioning = true
+          this.log('transitionstart', 'event')
+        },
+        transitionEnd() {
+          this.isTransitioning = false
+          this.log('transitionend', 'event')
+        },
+        transitionCancel() {
+          this.isTransitioning = false
+          this.log('transitioncancel', 'event')
+        },
+        bindTransition() {
+          Alpine.bind($refs.transitionElement, {
+            'x-transition:enter-start': this.transition.enterStart,
+            'x-transition:enter': this.transition.enter,
+            'x-transition:enter-end': this.transition.enterEnd,
+            'x-transition:leave-start': this.transition.leaveStart,
+            'x-transition:leave': this.transition.leave,
+            'x-transition:leave-end': this.transition.leaveEnd,
+          })
+        },
+      }"
+      class="w-full h-screen flex dark:bg-neutral-800 dark:text-gray-200 dark:[color-scheme:dark]"
+      :class="{ 'dark': $store.darkMode }"
+    >
+      <!-- left panel -->
+      <div class="w-1/3 px-10 py-6 flex flex-col background-transition">
+        <div class="flex gap-x-2">
+          <button
+            @click="open"
+            class="rounded-md border-violet-700 bg-violet-500 px-4 py-2 font-medium text-gray-100 transition-opacity transition-shadow duration-150 hover:bg-violet-600 focus:outline-hidden focus:ring-4 focus:ring-violet-200 dark:bg-violet-500 dark:hover:bg-violet-600 flex-1"
+          >
+            show
+          </button>
+          <button
+            @click="close"
+            class="rounded-md border-violet-700 bg-violet-500 px-4 py-2 font-medium text-gray-100 transition-opacity transition-shadow duration-150 hover:bg-violet-600 focus:outline-hidden focus:ring-4 focus:ring-violet-200 dark:bg-violet-500 dark:hover:bg-violet-600 flex-1"
+          >
+            hide
+          </button>
+          <button
+            @click="toggle"
+            class="rounded-md border-violet-700 bg-violet-500 px-4 py-2 font-medium text-gray-100 transition-opacity transition-shadow duration-150 hover:bg-violet-600 focus:outline-hidden focus:ring-4 focus:ring-violet-200 dark:bg-violet-500 dark:hover:bg-violet-600 flex-1"
+          >
+            toggle
+          </button>
+        </div>
+        <div class="h-1/2 my-auto">
+          <div
+            x-show="isVisible"
+            x-ref="transitionElement"
+            @transitionend="transitionEnd"
+            @transitioncancel="transitionCancel"
+            @transitionstart="transitionStart"
+            @transitionrun="transitionRun"
+            class="h-full bg-gray-100 dark:bg-neutral-700"
+          ></div>
+        </div>
+      </div>
+      <!-- right panel -->
+      <div
+        class="w-2/3 flex flex-col border-l border-gray-200 dark:border-neutral-600"
+      >
+        <div class="px-10 py-6">
+          <div class="flex flex-col gap-y-2">
+            <div class="flex items-center gap-x-2">
+              <div class="w-25">enter-start</div>
+              <div
+                x-data="input"
+                data-clearable
+                x-model="transition.enterStart"
+                class="flex flex-1 items-center rounded-sm border px-3 py-2 outline-hidden transition-shadow duration-200 focus-within:ring-3 focus:outline-hidden"
+                class-default="border-gray-300 bg-white focus-within:border-gray-400 focus-within:ring-violet-200 dark:border-neutral-500 dark:bg-neutral-700 dark:text-gray-300 dark:focus-within:ring-violet-300"
+              >
+                <div data-icon class="mr-3 empty:hidden"></div>
+                <div data-prepend class="mr-3 empty:hidden"></div>
+                <div class="mr-3 flex flex-1 flex-wrap">
+                  <input
+                    x-bind="input"
+                    type="text"
+                    class="w-full min-w-0 flex-1 border-0 bg-transparent p-0 outline-hidden focus:min-w-[64px] focus:outline-hidden"
+                  />
+                </div>
+                <div data-append class="mr-3 empty:hidden"></div>
+                <div class="flex items-center gap-x-2">
+                  <button
+                    x-bind="clearButton"
+                    @click="clear()"
+                    class="flex items-center"
+                    x-cloak
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="h-5 w-5 opacity-70"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-x-2">
+              <div class="w-25">enter</div>
+              <div
+                x-data="input"
+                data-clearable
+                x-model="transition.enter"
+                class="flex flex-1 items-center rounded-sm border px-3 py-2 outline-hidden transition-shadow duration-200 focus-within:ring-3 focus:outline-hidden"
+                class-default="border-gray-300 bg-white focus-within:border-gray-400 focus-within:ring-violet-200 dark:border-neutral-500 dark:bg-neutral-700 dark:text-gray-300 dark:focus-within:ring-violet-300"
+              >
+                <div data-icon class="mr-3 empty:hidden"></div>
+                <div data-prepend class="mr-3 empty:hidden"></div>
+                <div class="mr-3 flex flex-1 flex-wrap">
+                  <input
+                    x-bind="input"
+                    type="text"
+                    class="w-full min-w-0 flex-1 border-0 bg-transparent p-0 outline-hidden focus:min-w-[64px] focus:outline-hidden"
+                  />
+                </div>
+                <div data-append class="mr-3 empty:hidden"></div>
+                <div class="flex items-center gap-x-2">
+                  <button
+                    x-bind="clearButton"
+                    @click="clear()"
+                    class="flex items-center"
+                    x-cloak
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="h-5 w-5 opacity-70"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-x-2">
+              <div class="w-25">enter-end</div>
+              <div
+                x-data="input"
+                data-clearable
+                x-model="transition.enterEnd"
+                class="flex flex-1 items-center rounded-sm border px-3 py-2 outline-hidden transition-shadow duration-200 focus-within:ring-3 focus:outline-hidden"
+                class-default="border-gray-300 bg-white focus-within:border-gray-400 focus-within:ring-violet-200 dark:border-neutral-500 dark:bg-neutral-700 dark:text-gray-300 dark:focus-within:ring-violet-300"
+              >
+                <div data-icon class="mr-3 empty:hidden"></div>
+                <div data-prepend class="mr-3 empty:hidden"></div>
+                <div class="mr-3 flex flex-1 flex-wrap">
+                  <input
+                    x-bind="input"
+                    type="text"
+                    class="w-full min-w-0 flex-1 border-0 bg-transparent p-0 outline-hidden focus:min-w-[64px] focus:outline-hidden"
+                  />
+                </div>
+                <div data-append class="mr-3 empty:hidden"></div>
+                <div class="flex items-center gap-x-2">
+                  <button
+                    x-bind="clearButton"
+                    @click="clear()"
+                    class="flex items-center"
+                    x-cloak
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="h-5 w-5 opacity-70"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-x-2">
+              <div class="w-25">leave-start</div>
+              <div
+                x-data="input"
+                data-clearable
+                x-model="transition.leaveStart"
+                class="flex flex-1 items-center rounded-sm border px-3 py-2 outline-hidden transition-shadow duration-200 focus-within:ring-3 focus:outline-hidden"
+                class-default="border-gray-300 bg-white focus-within:border-gray-400 focus-within:ring-violet-200 dark:border-neutral-500 dark:bg-neutral-700 dark:text-gray-300 dark:focus-within:ring-violet-300"
+              >
+                <div data-icon class="mr-3 empty:hidden"></div>
+                <div data-prepend class="mr-3 empty:hidden"></div>
+                <div class="mr-3 flex flex-1 flex-wrap">
+                  <input
+                    x-bind="input"
+                    type="text"
+                    class="w-full min-w-0 flex-1 border-0 bg-transparent p-0 outline-hidden focus:min-w-[64px] focus:outline-hidden"
+                  />
+                </div>
+                <div data-append class="mr-3 empty:hidden"></div>
+                <div class="flex items-center gap-x-2">
+                  <button
+                    x-bind="clearButton"
+                    @click="clear()"
+                    class="flex items-center"
+                    x-cloak
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="h-5 w-5 opacity-70"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-x-2">
+              <div class="w-25">leave</div>
+              <div
+                x-data="input"
+                data-clearable
+                x-model="transition.leave"
+                class="flex flex-1 items-center rounded-sm border px-3 py-2 outline-hidden transition-shadow duration-200 focus-within:ring-3 focus:outline-hidden"
+                class-default="border-gray-300 bg-white focus-within:border-gray-400 focus-within:ring-violet-200 dark:border-neutral-500 dark:bg-neutral-700 dark:text-gray-300 dark:focus-within:ring-violet-300"
+              >
+                <div data-icon class="mr-3 empty:hidden"></div>
+                <div data-prepend class="mr-3 empty:hidden"></div>
+                <div class="mr-3 flex flex-1 flex-wrap">
+                  <input
+                    x-bind="input"
+                    type="text"
+                    class="w-full min-w-0 flex-1 border-0 bg-transparent p-0 outline-hidden focus:min-w-[64px] focus:outline-hidden"
+                  />
+                </div>
+                <div data-append class="mr-3 empty:hidden"></div>
+                <div class="flex items-center gap-x-2">
+                  <button
+                    x-bind="clearButton"
+                    @click="clear()"
+                    class="flex items-center"
+                    x-cloak
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="h-5 w-5 opacity-70"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-x-2">
+              <div class="w-25">leave-end</div>
+              <div
+                x-data="input"
+                data-clearable
+                x-model="transition.leaveEnd"
+                class="flex flex-1 items-center rounded-sm border px-3 py-2 outline-hidden transition-shadow duration-200 focus-within:ring-3 focus:outline-hidden"
+                class-default="border-gray-300 bg-white focus-within:border-gray-400 focus-within:ring-violet-200 dark:border-neutral-500 dark:bg-neutral-700 dark:text-gray-300 dark:focus-within:ring-violet-300"
+              >
+                <div data-icon class="mr-3 empty:hidden"></div>
+                <div data-prepend class="mr-3 empty:hidden"></div>
+                <div class="mr-3 flex flex-1 flex-wrap">
+                  <input
+                    x-bind="input"
+                    type="text"
+                    class="w-full min-w-0 flex-1 border-0 bg-transparent p-0 outline-hidden focus:min-w-[64px] focus:outline-hidden"
+                  />
+                </div>
+                <div data-append class="mr-3 empty:hidden"></div>
+                <div class="flex items-center gap-x-2">
+                  <button
+                    x-bind="clearButton"
+                    @click="clear()"
+                    class="flex items-center"
+                    x-cloak
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      class="h-5 w-5 opacity-70"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button
+            @click="bindTransition"
+            class="rounded-md border-violet-700 bg-violet-500 px-4 py-2 font-medium text-gray-100 transition-opacity transition-shadow duration-150 hover:bg-violet-600 focus:outline-hidden focus:ring-4 focus:ring-violet-200 dark:bg-violet-500 dark:hover:bg-violet-600 mt-4"
+          >
+            Set transition
+          </button>
+        </div>
+        <!-- logs panel -->
+        <div
+          class="border-t border-gray-200 dark:border-neutral-600 overflow-auto"
+        >
+          <!-- logs toolbar -->
+          <div
+            class="py-2 px-10 bg-gray-100 dark:bg-neutral-700 sticky top-0 flex items-center justify-between"
+          >
+            <button
+              @click="logs = []"
+              class="rounded-md border-violet-700 bg-violet-500 px-4 py-1 font-medium text-gray-100 transition-opacity transition-shadow duration-150 hover:bg-violet-600 focus:outline-hidden focus:ring-4 focus:ring-violet-200 dark:bg-violet-500 dark:hover:bg-violet-600"
+            >
+              Clear
+            </button>
+            <label>
+              <div class="group flex cursor-pointer items-center gap-x-4">
+                <input x-model="autoClear" type="checkbox" class="sr-only" />
+                <div
+                  class="relative flex h-6 w-11 items-center rounded-full bg-neutral-200 px-0.5 ring-violet-200 group-has-checked:bg-violet-400 group-has-focus:ring-4 dark:bg-neutral-800 dark:group-has-checked:bg-violet-400"
+                >
+                  <div
+                    class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full border border-neutral-300 bg-white shadow-sm transition-all group-has-checked:translate-x-full group-has-checked:border-0 dark:border-neutral-400"
+                  ></div>
+                </div>
+                <span> Auto clear </span>
+              </div>
+            </label>
+          </div>
+          <!-- logs -->
+          <div class="px-10 py-6">
+            <div class="flex flex-col gap-y-1 font-mono">
+              <template x-for="l in logs">
+                <div class="flex items-center gap-x-2">
+                  <span
+                    x-text="l.frame"
+                    class="bg-gray-100 dark:bg-gray-600 rounded-md px-1 w-8 self-center text-center"
+                  ></span>
+                  <span
+                    x-show="l.type"
+                    x-text="l.type"
+                    class="rounded-md px-1 self-center dark:text-gray-800"
+                    :class="{ 'bg-green-200': l.type === 'event', 'bg-yellow-200': l.type === 'style' }"
+                  ></span>
+                  <span x-text="l.message"></span>
+                  <span
+                    x-show="l.type === 'event' && l.propertyName"
+                    x-text="`(${l.propertyName})`"
+                  ></span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      x-data
+      class="absolute bottom-0 right-0 p-2 mr-6 flex gap-x-2 rounded-lg border border-gray-600 dark:border-gray-300 mb-2"
+      :class="{ 'dark': $store.darkMode }"
+    >
+      <button
+        @click="$store.darkMode = !$store.darkMode"
+        class="text-gray-700 dark:text-gray-300"
+      >
+        <svg
+          x-show="$store.darkMode"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+          class="w-6 h-6"
+        >
+          <path
+            d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"
+          />
+        </svg>
+        <svg
+          x-show="!$store.darkMode"
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+          class="w-6 h-6"
+        >
+          <path
+            d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"
+          />
+        </svg>
+      </button>
+      <a href="" class="text-gray-700 dark:text-gray-300">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+          class="w-6 h-6"
+        >
+          <path
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"
+          />
+        </svg>
+      </a>
+    </div>
+  </body>
+</html>
