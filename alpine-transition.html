@@ -34,12 +34,20 @@
         lastHidden: false,
         autoClear: false,
         logs: [],
+        bufferLogs: [],
+        liveLogs: true,
         init() {
           this.$store.darkMode = false
           this.bindTransition()
           this.privateClasses = this.$refs.transitionElement.className
           let loop = window.startAnimationLoop.bind(this)
           loop()
+          this.$watch(
+            'isTransitioning', 
+            (value) => {
+              this.logs = this.logs.concat(this.bufferLogs)
+              this.bufferLogs = []
+            })
         },
         transition: {
           enterStart: 'opacity-0',
@@ -73,7 +81,7 @@
           let repeat = message === this.logs[this.logs.length - 1]?.message
           let repeatCount = repeat ? this.logs[this.logs.length - 1].repeatCount + 1 : 0
           let propertyName = this.$event?.propertyName
-          this.logs.push({
+          this[this.liveLogs ? 'logs' : 'bufferLogs'].push({
             frame: this.frame,
             message,
             type,
@@ -428,19 +436,34 @@
             >
               Clear
             </button>
-            <label>
-              <div class="group flex cursor-pointer items-center gap-x-4">
-                <input x-model="autoClear" type="checkbox" class="sr-only" />
-                <div
-                  class="relative flex h-6 w-11 items-center rounded-full bg-neutral-200 px-0.5 ring-violet-200 group-has-checked:bg-violet-400 group-has-focus:ring-4 dark:bg-neutral-800 dark:group-has-checked:bg-violet-400"
-                >
+            <div class="flex gap-x-4">
+              <label>
+                <div class="group flex cursor-pointer items-center gap-x-2">
+                  <input x-model="liveLogs" type="checkbox" class="sr-only" />
                   <div
-                    class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full border border-neutral-300 bg-white shadow-sm transition-all group-has-checked:translate-x-full group-has-checked:border-0 dark:border-neutral-400"
-                  ></div>
+                    class="relative flex h-6 w-11 items-center rounded-full bg-neutral-200 px-0.5 ring-violet-200 group-has-checked:bg-violet-400 group-has-focus:ring-4 dark:bg-neutral-800 dark:group-has-checked:bg-violet-400"
+                  >
+                    <div
+                      class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full border border-neutral-300 bg-white shadow-sm transition-all group-has-checked:translate-x-full group-has-checked:border-0 dark:border-neutral-400"
+                    ></div>
+                  </div>
+                  <span> Live logs </span>
                 </div>
-                <span> Auto clear </span>
-              </div>
-            </label>
+              </label>
+              <label>
+                <div class="group flex cursor-pointer items-center gap-x-2">
+                  <input x-model="autoClear" type="checkbox" class="sr-only" />
+                  <div
+                    class="relative flex h-6 w-11 items-center rounded-full bg-neutral-200 px-0.5 ring-violet-200 group-has-checked:bg-violet-400 group-has-focus:ring-4 dark:bg-neutral-800 dark:group-has-checked:bg-violet-400"
+                  >
+                    <div
+                      class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full border border-neutral-300 bg-white shadow-sm transition-all group-has-checked:translate-x-full group-has-checked:border-0 dark:border-neutral-400"
+                    ></div>
+                  </div>
+                  <span> Auto clear </span>
+                </div>
+              </label>
+            </div>
           </div>
           <!-- logs -->
           <div class="px-10 py-6">
