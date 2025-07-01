@@ -100,6 +100,10 @@
           if (this.$event.elapsedTime === 0) return
           this.isTransitioning = false
         },
+        handleSpace() {
+          if (document.activeElement !== document.body) return
+          this.toggle()
+        },
         bindTransition() {
           Alpine.bind($refs.transitionElement, {
             'x-transition:enter-start': this.transition.enterStart,
@@ -111,6 +115,7 @@
           })
         },
       }"
+      @keyup.window.space="handleSpace"
       class="w-full h-screen flex dark:bg-neutral-800 dark:text-gray-200 dark:[color-scheme:dark]"
       :class="{ 'dark': $store.darkMode }"
     >
@@ -133,7 +138,7 @@
             @click="toggle"
             class="rounded-md border-violet-700 bg-violet-500 px-4 py-2 font-medium text-gray-100 transition-opacity transition-shadow duration-150 hover:bg-violet-600 focus:outline-hidden focus:ring-4 focus:ring-violet-200 dark:bg-violet-500 dark:hover:bg-violet-600 flex-1"
           >
-            toggle
+            toggle (space)
           </button>
         </div>
         <div class="h-1/2 my-auto">
